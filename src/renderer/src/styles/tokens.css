@@ -1,0 +1,80 @@
+/* mdPad design tokens. Components must use these variables, never
+   hard-coded colors. Light and dark palettes + `data-theme="system"` handled
+   by the theme controller in the settings store. */
+
+:root {
+  --font-ui: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  --font-editor: 'Cascadia Code', Consolas, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+
+  --font-size-ui: 13px;
+  --font-size-editor: 14px;
+  --editor-line-height: 1.65;
+  --content-width: 920px;
+  --sidebar-width: 248px;
+
+  --radius-small: 4px;
+  --radius-medium: 8px;
+  --radius-large: 14px;
+}
+
+:root[data-theme='light'] {
+  --background: #f3f6fb;
+  --surface: #ffffff;
+  --surface-alt: #f0f4f9;
+  --surface-elevated: #ffffff;
+  --ribbon-background: #fbfdff;
+  --border: #d9e1eb;
+  --text-primary: #172033;
+  --text-secondary: #637087;
+  --accent: #1473e6;
+  --accent-contrast: #ffffff;
+  --editor-background: #ffffff;
+  --workspace-background: #edf2f7;
+  --page-background: #ffffff;
+  --page-border: #ccd7e5;
+  --page-shadow: rgba(42, 62, 94, 0.12);
+  --sidebar-background: #f8fafd;
+  --statusbar-background: #f7f9fc;
+  --hover: rgba(20, 115, 230, 0.08);
+  --active-tab: #ffffff;
+  --danger: #c9362b;
+  --focus-ring: rgba(20, 115, 230, 0.45);
+  --shadow: rgba(31, 48, 78, 0.16);
+  --selection: rgba(20, 115, 230, 0.15);
+  --code-background: #f3f6fa;
+  --mark-background: #ffe58a;
+}
+
+:root[data-theme='dark'] {
+  --background: #121722;
+  --surface: #1a2130;
+  --surface-alt: #202a3b;
+  --surface-elevated: #20293a;
+  --ribbon-background: #171e2b;
+  --border: #303b50;
+  --text-primary: #e8edf7;
+  --text-secondary: #9da9bd;
+  --accent: #5da2ff;
+  --accent-contrast: #14161a;
+  --editor-background: #171e2b;
+  --workspace-background: #111722;
+  --page-background: #1a2130;
+  --page-border: #344158;
+  --page-shadow: rgba(0, 0, 0, 0.34);
+  --sidebar-background: #171e2b;
+  --statusbar-background: #151c28;
+  --hover: rgba(93, 162, 255, 0.11);
+  --active-tab: #20293a;
+  --danger: #e57373;
+  --focus-ring: rgba(107, 157, 232, 0.6);
+  --shadow: rgba(0, 0, 0, 0.42);
+  --selection: rgba(107, 157, 232, 0.25);
+  --code-background: #292a30;
+  --mark-background: #7a6420;
+}
