@@ -45,7 +45,8 @@ describe('workspace service', () => {
     const root = await workspace();
     await createWorkspaceFolder(root, '', 'Drafts');
     const created = await createWorkspaceFile(root, 'Drafts', 'chapter');
-    expect(created).toBe(path.join(root, 'Drafts', 'chapter.md'));
+    const expectedCreated = path.join(root, 'Drafts', 'chapter.md');
+    expect(await fs.realpath(created)).toBe(await fs.realpath(expectedCreated));
 
     await renameWorkspaceEntry(root, 'Drafts/chapter.md', 'chapter-one.md');
     await duplicateWorkspaceEntry(root, 'Drafts/chapter-one.md');
