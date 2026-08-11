@@ -1,0 +1,81 @@
+# mdPad
+
+mdPad is a local-first, offline Windows Markdown desktop editor. Documents remain ordinary
+files on the user's computer. Core editing has no account, cloud, telemetry, remote-font, runtime
+API, or server requirement.
+
+**Official website:** [mdpad.olynors.com](https://mdpad.olynors.com/)
+
+Version 0.1 implements the complete offline acceptance scope from the master build prompt:
+
+- Source, Visual, Preview, and Source + Preview modes.
+- Rich formatting for headings, fonts, sizes, bold, italic, underline, strikethrough, highlight,
+  code, links, images, lists, tasks, quotes, tables, rules, and left/center/right/justified text.
+- Folder workspaces with a nested tree, create, rename, move, duplicate, recycle-bin delete,
+  reveal, local search, outline, tags, backlinks, and filesystem watching.
+- Multiple protected tabs, recent-tab reopening, session/workspace restore, quick open, command
+  palette, native menus, and standard keyboard shortcuts.
+- UTF-8/BOM and LF/CRLF preservation, atomic saves, external-change conflict handling, configurable
+  autosave, and crash recovery.
+- Local image paste/drop with collision-resistant relative attachments.
+- Light, dark, and system themes; editor font, size, line height, wrap, width, and attachment
+  preferences.
+- Sanitized GFM rendering, safe local links, `[[Document]]` suggestions/navigation, local HTML/PDF
+  export, and offline code highlighting.
+
+## Install or run
+
+Download the current Windows installer or portable edition from the
+[official mdPad website](https://mdpad.olynors.com/) or the repository's GitHub Releases page.
+
+Copy either release artifact to another 64-bit Windows 10/11 system:
+
+- `mdPad-Setup-0.1.1-x64.exe` — guided per-user installer with Start Menu/Desktop shortcuts.
+- `mdPad-Portable-0.1.1-x64.exe` — standalone build that runs without installation.
+
+The development build is unsigned, so Windows SmartScreen may show an “Unknown publisher” warning.
+For public commercial distribution, sign the executable and installer with an Authenticode
+certificate.
+
+To run from source, install Node.js 22.12+ and npm 10+, then:
+
+```powershell
+npm install
+npm run dev
+```
+
+Build a local unpacked application or both distributables with:
+
+```powershell
+npm run pack:win
+npm run dist:win
+```
+
+Artifacts are written to `release/`.
+
+## Important Visual Mode behavior
+
+Opening, viewing, and leaving Visual Mode without editing never changes the Markdown source. This is
+covered by an automated regression test. After an actual Visual Mode edit, the document is
+converted from sanitized HTML back to Markdown and may normalize whitespace, list formatting, or
+inline HTML across the edited document. Use Source Mode when exact source layout matters. Font,
+size, underline, highlight, and alignment use portable inline HTML because standard Markdown has no
+equivalent syntax.
+
+## File safety and limits
+
+- Existing untouched files are never written.
+- Saves use a temporary sibling file, flush it, then replace the destination atomically.
+- External changes reload automatically when safe and produce a conflict banner when local edits
+  also exist.
+- Files must be valid UTF-8 and no larger than 64 MiB. Pasted images are limited to 20 MiB.
+- Mixed line endings remain byte-identical while untouched and serialize as LF after a real edit.
+
+Run the full verification suite with `npm run check`. See [ARCHITECTURE.md](ARCHITECTURE.md),
+[SECURITY.md](SECURITY.md), and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for implementation and
+release details.
+
+## License
+
+Application source is `UNLICENSED` and remains commercially licensable. Third-party software keeps
+the licenses listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).

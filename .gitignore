@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+dist/
+dist-electron/
+release/
+artifacts/
+
+# Logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.local
+
+# Credentials / secrets (never commit)
+*.pem
+*.key
+*.pfx
+*.p12
+.env
+.env.*
+secrets/
+
+# Test / temp artifacts
+coverage/
+*.tmp-marksmith

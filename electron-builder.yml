@@ -1,0 +1,45 @@
+appId: com.mdpad.desktop
+productName: mdPad
+copyright: Copyright © 2026 mdPad
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - out/**/*
+  - package.json
+
+extraResources:
+  - from: resources/icon.png
+    to: icon.png
+
+asar: true
+compression: maximum
+
+win:
+  executableName: mdPad
+  icon: icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+
+nsis:
+  artifactName: mdPad-Setup-${version}-${arch}.${ext}
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: mdPad
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
+
+portable:
+  artifactName: mdPad-Portable-${version}-${arch}.${ext}
+
+publish: null
