@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 - 2026-08-11
+
+### Fixed
+
+- Registered mdPad as a Windows Default Apps and Open with candidate for `.md` and `.markdown` files.
+- Opened the exact Markdown file supplied by Windows instead of creating an unrelated blank document.
+- Routed files launched while mdPad is already running into a new or existing tab in the active window.
+
 ## 0.1.1 - 2026-08-11
 
 ### Fixed

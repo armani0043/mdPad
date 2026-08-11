@@ -1,7 +1,23 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '../shared/constants';
 import type { DesktopAPI } from '../shared/types/desktopApi';
-import type { AppInfo, MenuAction } from '../shared/types';
+import type { AppInfo, IpcResult, MenuAction, OpenedFilePayload } from '../shared/types';
+
+type LaunchFileResult = IpcResult<OpenedFilePayload>;
+type LaunchFileListener = (result: LaunchFileResult) => void;
+
+// The main process can deliver a startup file as soon as the page loads. Buffer
+// it in preload so React cannot miss the event before its first effect runs.
+const pendingLaunchFiles: LaunchFileResult[] = [];
+const launchFileListeners = new Set<LaunchFileListener>();
+
+ipcRenderer.on(IPC.appOpenFile, (_event, result: LaunchFileResult) => {
+  if (launchFileListeners.size === 0) {
+    pendingLaunchFiles.push(result);
+    return;
+  }
+  for (const listener of launchFileListeners) listener(result);
+});
 
 /**
  * Preload bridge. Runs in an isolated, sandboxed context and exposes only a
@@ -21,6 +37,12 @@ const api: DesktopAPI = {
   closeWindow: () => ipcRenderer.invoke(IPC.windowClose),
   isWindowMaximized: () => ipcRenderer.invoke(IPC.windowIsMaximized),
   getAppInfo: () => ipcRenderer.invoke(IPC.appInfo) as Promise<AppInfo>,
+  onLaunchFile: (listener) => {
+    launchFileListeners.add(listener);
+    const waiting = pendingLaunchFiles.splice(0);
+    for (const result of waiting) listener(result);
+    return () => launchFileListeners.delete(listener);
+  },
   onMenuAction: (listener) => {
     const allowed: readonly string[] = [
       'file:new',

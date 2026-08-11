@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type {
   FileErrorPayload,
+  IpcResult,
   LineEnding,
   OpenedFilePayload,
   RecoveryEntry,
@@ -48,6 +49,7 @@ interface DocumentStoreState {
   recentlyClosed: MarkdownDocument[];
   lastError: FileErrorPayload | null;
   newDocument(): void;
+  openLaunchFile(result: IpcResult<OpenedFilePayload>): void;
   openFileViaDialog(): Promise<void>;
   openFilePath(absolutePath: string): Promise<MarkdownDocument | null>;
   restoreFiles(paths: string[]): Promise<void>;
@@ -133,7 +135,10 @@ async function removeRecovery(document: MarkdownDocument): Promise<void> {
 }
 
 export const useDocumentStore = create<DocumentStoreState>((set, get) => {
-  const openPayload = (payload: OpenedFilePayload): MarkdownDocument => {
+  const openPayload = (
+    payload: OpenedFilePayload,
+    replacePristineUntitled = false,
+  ): MarkdownDocument => {
     const existing = get().documents.find(
       (document) =>
         document.absolutePath !== null &&
@@ -144,8 +149,15 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => {
       return existing;
     }
     const document = documentFromPayload(payload);
+    const currentDocuments = get().documents;
+    const onlyDocument = currentDocuments.length === 1 ? currentDocuments[0] : null;
+    const shouldReplaceUntitled =
+      replacePristineUntitled &&
+      onlyDocument?.absolutePath === null &&
+      !onlyDocument.recovered &&
+      !isModified(onlyDocument);
     set({
-      documents: [...get().documents, document],
+      documents: shouldReplaceUntitled ? [document] : [...currentDocuments, document],
       activeDocumentId: document.id,
       cursor: { line: 1, column: 1 },
       lastError: null,
@@ -259,6 +271,11 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => {
         cursor: { line: 1, column: 1 },
         lastError: null,
       });
+    },
+
+    openLaunchFile: (result) => {
+      if (!result.ok) return set({ lastError: result.error });
+      openPayload(result.value, true);
     },
 
     openFileViaDialog: async () => {

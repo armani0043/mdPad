@@ -17,6 +17,14 @@ extraResources:
 asar: true
 compression: maximum
 
+fileAssociations:
+  - ext:
+      - md
+      - markdown
+    name: mdPad.Markdown
+    description: Markdown Document
+    role: Editor
+
 win:
   executableName: mdPad
   icon: icon.png
@@ -32,7 +40,7 @@ nsis:
   artifactName: mdPad-Setup-${version}-${arch}.${ext}
   oneClick: false
   allowToChangeInstallationDirectory: true
-  perMachine: false
+  perMachine: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: mdPad

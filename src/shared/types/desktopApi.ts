@@ -46,6 +46,8 @@ export interface DesktopAPI {
   isWindowMaximized(): Promise<boolean>;
   /** Application version/runtime info for the About dialog. */
   getAppInfo(): Promise<AppInfo>;
+  /** Receive a Markdown file supplied by Windows at launch or from a second instance. */
+  onLaunchFile(listener: (result: IpcResult<OpenedFilePayload>) => void): () => void;
   /** Subscribe to native menu actions. Returns an unsubscribe function. */
   onMenuAction(listener: (action: MenuAction) => void): () => void;
   openFolderDialog(showAllFiles: boolean): Promise<IpcResult<WorkspacePayload | null>>;

@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import type { AppStateData, FileErrorPayload } from '../../shared/types';
+import type {
+  AppStateData,
+  FileErrorPayload,
+  IpcResult,
+  OpenedFilePayload,
+} from '../../shared/types';
 import { renderMarkdown } from './markdown/markdown';
 import { CommandPalette } from './components/CommandPalette';
 import { EditorToolbar } from './components/EditorToolbar';
@@ -38,6 +43,7 @@ export function App(): React.JSX.Element {
   const [navigationView, setNavigationView] = useState<SidebarView | null>(null);
   const restoredState = useRef<AppStateData>(EMPTY_STATE);
   const initialized = useRef(false);
+  const queuedLaunchFiles = useRef<IpcResult<OpenedFilePayload>[]>([]);
   const documents = useDocumentStore((state) => state.documents);
   const activeDocumentId = useDocumentStore((state) => state.activeDocumentId);
   const workspace = useWorkspaceStore((state) => state.workspace);
@@ -61,6 +67,13 @@ export function App(): React.JSX.Element {
       window.removeEventListener('mdpad:navigation-view', showNavigation);
       window.removeEventListener('mdpad:editor-find', closeNavigationForFind);
     };
+  }, []);
+
+  useEffect(() => {
+    return window.desktopAPI.onLaunchFile((result) => {
+      if (initialized.current) useDocumentStore.getState().openLaunchFile(result);
+      else queuedLaunchFiles.current.push(result);
+    });
   }, []);
 
   const exportDocument = async (format: 'html' | 'pdf'): Promise<void> => {
@@ -98,6 +111,9 @@ export function App(): React.JSX.Element {
       }
       if (recoveryResult.ok && recoveryResult.value.length > 0) {
         useDocumentStore.getState().restoreRecovery(recoveryResult.value);
+      }
+      for (const result of queuedLaunchFiles.current.splice(0)) {
+        useDocumentStore.getState().openLaunchFile(result);
       }
       if (useDocumentStore.getState().documents.length === 0) {
         useDocumentStore.getState().newDocument();

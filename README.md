@@ -4,8 +4,6 @@ mdPad is a local-first, offline Windows Markdown desktop editor. Documents remai
 files on the user's computer. Core editing has no account, cloud, telemetry, remote-font, runtime
 API, or server requirement.
 
-**Official website:** [mdpad.olynors.com](https://mdpad.olynors.com/)
-
 Version 0.1 implements the complete offline acceptance scope from the master build prompt:
 
 - Source, Visual, Preview, and Source + Preview modes.
@@ -25,13 +23,10 @@ Version 0.1 implements the complete offline acceptance scope from the master bui
 
 ## Install or run
 
-Download the current Windows installer or portable edition from the
-[official mdPad website](https://mdpad.olynors.com/) or the repository's GitHub Releases page.
-
 Copy either release artifact to another 64-bit Windows 10/11 system:
 
-- `mdPad-Setup-0.1.1-x64.exe` — guided per-user installer with Start Menu/Desktop shortcuts.
-- `mdPad-Portable-0.1.1-x64.exe` — standalone build that runs without installation.
+- `mdPad-Setup-0.1.2-x64.exe` — guided Windows installer with Start Menu/Desktop shortcuts and Markdown file registration.
+- `mdPad-Portable-0.1.2-x64.exe` — standalone build that runs without installation.
 
 The development build is unsigned, so Windows SmartScreen may show an “Unknown publisher” warning.
 For public commercial distribution, sign the executable and installer with an Authenticode

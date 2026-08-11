@@ -8,11 +8,13 @@ function delay(milliseconds: number): Promise<void> {
 
 export function runUiSmokeTest(window: BrowserWindow): void {
   if (process.env.MDPAD_UI_SMOKE !== '1') return;
+  const expectedLaunchFileName = process.env.MDPAD_UI_SMOKE_EXPECT_FILE_NAME ?? '';
   window.webContents.once('did-finish-load', () => {
     void (async () => {
       await delay(700);
       const result = (await window.webContents.executeJavaScript(`
         (async () => {
+          const expectedLaunchFileName = ${JSON.stringify(expectedLaunchFileName)};
           const pause = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
           const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
           const button = (title) => document.querySelector('button[title="' + title + '"]');
@@ -49,6 +51,11 @@ export function runUiSmokeTest(window: BrowserWindow): void {
           const headerTitle = document.querySelector('.ribbon-document-title');
           const headerTitleConstrained = Boolean(headerTitle?.getAttribute('title')) &&
             (headerTitle?.textContent?.trim().length ?? 100) <= 42;
+          const initialTabNames = [...document.querySelectorAll('.tab-name')]
+            .map((element) => element.textContent?.trim());
+          const initialLaunchFileCorrect = !expectedLaunchFileName ||
+            (initialTabNames.length === 1 &&
+              document.querySelector('.tab.active .tab-name')?.textContent?.trim() === expectedLaunchFileName);
 
           button('Source mode')?.click(); await pause();
           const sourcePresent = Boolean(document.querySelector('.cm-editor'));
@@ -154,6 +161,7 @@ export function runUiSmokeTest(window: BrowserWindow): void {
             sourceFindPresent, visualFindPresent, previewFindPresent, splitFindPresent,
             workspaceToolsPresent, temporaryWorkspacePanePresent, workspacePaneCloses,
             normalSidebarAbsent, homeDuplicatesAbsent, headerTitleConstrained,
+            initialTabNames, initialLaunchFileCorrect,
             ribbonCollapsed, ribbonExpanded, modeOrderCorrect, logoPresent, ribbonTabs,
             ribbonTabsCorrect, linkDialogPresent, imageInsertAbsent,
             sideTabCount, sidePanes, sideActiveEditable, sideReferenceVisible, sideLabelsPresent,
@@ -188,6 +196,7 @@ export function runUiSmokeTest(window: BrowserWindow): void {
         result.normalSidebarAbsent === true &&
         result.homeDuplicatesAbsent === true &&
         result.headerTitleConstrained === true &&
+        result.initialLaunchFileCorrect === true &&
         result.ribbonCollapsed === true &&
         result.ribbonExpanded === true &&
         result.finalFindPaneVisible === true &&

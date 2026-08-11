@@ -66,6 +66,7 @@ const MARKDOWN_FILE_FILTERS = [
   { name: 'All Files', extensions: ['*'] },
 ];
 const MAX_ASSET_BYTES = 20 * 1024 * 1024;
+const fileAccess = new FileAccessRegistry();
 
 function errorPayload(error: unknown, context: string): FileErrorPayload {
   if (error instanceof FileSystemError) return error.toPayload();
@@ -105,8 +106,24 @@ function emitWorkspaceChanged(contents: WebContents, event: WorkspaceChangeEvent
   if (!contents.isDestroyed()) contents.send(IPC.workspaceChanged, event);
 }
 
+/** Read and authorize a file supplied by the operating system for this renderer. */
+export async function openLaunchFileForContents(
+  contents: WebContents,
+  absolutePathInput: string,
+): Promise<IpcResult<OpenedFilePayload>> {
+  try {
+    if (contents.isDestroyed()) {
+      throw new FileSystemError('PERMISSION_DENIED', 'The application window is no longer open.');
+    }
+    const realPath = await fs.realpath(normalizeAbsolutePath(absolutePathInput));
+    fileAccess.authorize(contents.id, realPath);
+    return { ok: true, value: await openPath(realPath) };
+  } catch (error) {
+    return { ok: false, error: errorPayload(error, 'Could not open file from Windows') };
+  }
+}
+
 export function registerIpcHandlers(): void {
-  const fileAccess = new FileAccessRegistry();
   const watchers = new Map<number, FSWatcher>();
   const watchTimers = new Map<number, ReturnType<typeof setTimeout>>();
 

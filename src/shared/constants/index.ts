@@ -28,6 +28,7 @@ export const IPC = {
   windowClose: 'window:close',
   windowIsMaximized: 'window:is-maximized',
   appInfo: 'app:info',
+  appOpenFile: 'app:open-file',
   menuAction: 'menu:action',
   dialogOpenFolder: 'dialog:open-folder',
   workspaceRefresh: 'workspace:refresh',
