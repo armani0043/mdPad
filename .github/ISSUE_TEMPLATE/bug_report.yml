@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a reproducible problem in mdPad.
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: input
+    id: version
+    attributes:
+      label: mdPad version
+      placeholder: 0.1.1
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Do not include private documents or sensitive information.
+      placeholder: Tell us exactly what you did and what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional information
+      description: Add screenshots or other non-sensitive context if useful.
