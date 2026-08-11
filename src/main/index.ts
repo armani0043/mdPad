@@ -7,6 +7,7 @@ import { installApplicationMenu } from './menu';
 import { createMainWindow } from './windows/mainWindow';
 import { createSplashWindow } from './windows/splashWindow';
 import { runUiSmokeTest } from './smokeTest';
+import { initializeAutoUpdates } from './update/updateService';
 
 const MINIMUM_SPLASH_DURATION_MS = 700;
 const launchFileQueue = markdownFilePathsFromArguments(process.argv, process.cwd());
@@ -123,6 +124,7 @@ if (!gotLock) {
     session.defaultSession.setPermissionCheckHandler(() => false);
 
     registerIpcHandlers();
+    initializeAutoUpdates();
     openMainWindow(process.env.MDPAD_UI_SMOKE !== '1');
 
     app.on('activate', () => {

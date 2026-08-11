@@ -15,6 +15,8 @@ native addons.
 - **Turndown 7.2.4 + GFM plugin 1.0.2 (MIT):** explicit Visual Mode HTML-to-Markdown conversion.
 - **highlight.js 11.11.1 (BSD-3-Clause):** bundled offline preview code highlighting.
 - **lucide-react 1.31.0 (ISC):** consistent local vector UI icons.
+- **electron-updater 6.8.9 (MIT):** optional, integrity-checked NSIS updates from public GitHub
+  Releases. Automatic checks are limited to installed online Windows builds and never gate startup.
 
 ## Build/test
 
@@ -25,9 +27,9 @@ native addons.
 
 ## Deliberately absent
 
-No SQLite/native addon, telemetry, updater, networking client, analytics, cloud, authentication,
-payment, AI, collaboration, activation, licensing, or DRM SDK is included. Filesystem plus small
-validated local JSON state is sufficient for v0.1.
+No SQLite/native addon, telemetry, analytics, document cloud, authentication, payment, AI,
+collaboration, activation, licensing, or DRM SDK is included. The only packaged network client is
+the narrowly scoped updater; document editing and all user data remain local and fully offline.
 
 Primary implementation references include the Electron security documentation, CodeMirror manual,
 Marked security warning, DOMPurify documentation, Turndown repository, and electron-builder Windows

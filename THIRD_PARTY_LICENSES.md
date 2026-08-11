@@ -1,6 +1,6 @@
 # Third-party licenses
 
-Direct-package inventory reviewed 2026-08-10 from installed npm metadata. All licenses are
+Direct-package inventory reviewed 2026-08-11 from installed npm metadata. All licenses are
 commercially compatible; `package-lock.json` is authoritative for the resolved graph.
 
 | Package(s)                          | Installed version(s)                 | License               |
@@ -23,6 +23,7 @@ commercially compatible; `package-lock.json` is authoritative for the resolved g
 | lucide-react                        | 1.31.0                               | ISC                   |
 | electron-vite, Vite                 | 5.0.0, 7.3.6                         | MIT                   |
 | electron-builder                    | 26.15.3                              | MIT                   |
+| electron-updater                    | 6.8.9                                | MIT                   |
 | TypeScript                          | 5.9.3                                | Apache-2.0            |
 | Vitest, happy-dom                   | 4.1.10, 20.11.2                      | MIT                   |
 | ESLint toolchain, Prettier          | versions locked in package-lock.json | MIT                   |

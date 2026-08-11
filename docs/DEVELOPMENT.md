@@ -37,8 +37,10 @@ Release checklist:
 3. Run `npm run dist:win` and smoke-launch `release/win-unpacked/mdPad.exe` or the portable EXE.
 4. Record file sizes and SHA-256 hashes.
 5. Verify fully offline with a representative workspace, save, preview, search, attachment paste,
-   restart/restore, and export.
-6. Before public distribution, add Authenticode signing and ship complete Electron/Chromium and npm
+   restart/restore, and export. Confirm startup remains silent with the network disconnected.
+6. Upload the setup EXE, its blockmap, and `latest.yml` from the same build to the public GitHub
+   Release; never mix update metadata and installers from different builds.
+7. Before public distribution, add Authenticode signing and ship complete Electron/Chromium and npm
    third-party notices. Unsigned internal builds can trigger SmartScreen.
 
 ## File-safety rules

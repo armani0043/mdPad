@@ -111,6 +111,15 @@ export interface AppInfo {
   platform: string;
 }
 
+/** Renderer-visible updater state. Automatic checks stay in `idle` and silent. */
+export type UpdateState =
+  | { phase: 'idle' }
+  | { phase: 'available'; version: string }
+  | { phase: 'downloading'; version: string; percent: number }
+  | { phase: 'download-error'; version: string }
+  | { phase: 'ready'; version: string }
+  | { phase: 'installing'; version: string };
+
 export type WorkspaceEntryType = 'file' | 'folder';
 
 export interface WorkspaceEntry {

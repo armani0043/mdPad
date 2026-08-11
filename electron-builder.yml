@@ -50,4 +50,8 @@ nsis:
 portable:
   artifactName: mdPad-Portable-${version}-${arch}.${ext}
 
-publish: null
+publish:
+  provider: github
+  owner: armani0043
+  repo: mdPad
+  releaseType: release

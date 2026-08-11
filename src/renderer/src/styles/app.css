@@ -45,6 +45,92 @@ button:disabled {
   min-width: 0;
 }
 
+/* Optional auto-update notice */
+.update-notification {
+  min-height: 52px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 14px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--shadow) 34%, transparent);
+}
+.update-icon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 9px;
+}
+.update-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.update-copy strong {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 650;
+}
+.update-progress {
+  width: min(360px, 45vw);
+  height: 3px;
+  margin-top: 3px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 15%, var(--border));
+  border-radius: 999px;
+}
+.update-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width 180ms ease;
+}
+.update-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.update-actions button {
+  min-height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 11px;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.update-actions button:hover {
+  color: var(--text-primary);
+  background: var(--hover);
+}
+.update-actions button.primary {
+  color: white;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.update-actions button.icon-only {
+  width: 29px;
+  min-width: 29px;
+  padding: 0;
+}
+
 /* Sidebar */
 .sidebar {
   position: relative;

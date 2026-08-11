@@ -56,6 +56,7 @@ export function runUiSmokeTest(window: BrowserWindow): void {
           const initialLaunchFileCorrect = !expectedLaunchFileName ||
             (initialTabNames.length === 1 &&
               document.querySelector('.tab.active .tab-name')?.textContent?.trim() === expectedLaunchFileName);
+          const autoUpdateNoticeAbsent = !document.querySelector('.update-notification');
 
           button('Source mode')?.click(); await pause();
           const sourcePresent = Boolean(document.querySelector('.cm-editor'));
@@ -162,6 +163,7 @@ export function runUiSmokeTest(window: BrowserWindow): void {
             workspaceToolsPresent, temporaryWorkspacePanePresent, workspacePaneCloses,
             normalSidebarAbsent, homeDuplicatesAbsent, headerTitleConstrained,
             initialTabNames, initialLaunchFileCorrect,
+            autoUpdateNoticeAbsent,
             ribbonCollapsed, ribbonExpanded, modeOrderCorrect, logoPresent, ribbonTabs,
             ribbonTabsCorrect, linkDialogPresent, imageInsertAbsent,
             sideTabCount, sidePanes, sideActiveEditable, sideReferenceVisible, sideLabelsPresent,
@@ -197,6 +199,7 @@ export function runUiSmokeTest(window: BrowserWindow): void {
         result.homeDuplicatesAbsent === true &&
         result.headerTitleConstrained === true &&
         result.initialLaunchFileCorrect === true &&
+        result.autoUpdateNoticeAbsent === true &&
         result.ribbonCollapsed === true &&
         result.ribbonExpanded === true &&
         result.finalFindPaneVisible === true &&

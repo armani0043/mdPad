@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.3 - 2026-08-11
+
+### Added
+
+- Added a silent, connectivity-gated startup update check for installed Windows builds.
+- Added optional download, progress, postpone, and confirmed install-and-restart controls.
+- Added GitHub Releases update metadata and a tag-triggered Windows publishing workflow.
+
+### Security and privacy
+
+- Update downloads use HTTPS and electron-updater integrity metadata generated with the installer.
+- Offline, portable, development, and UI-smoke builds perform no automatic update request.
+- Downloaded updates never install merely because the user closes mdPad.
+
 ## 0.1.2 - 2026-08-11
 
 ### Fixed

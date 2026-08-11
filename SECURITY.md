@@ -18,14 +18,16 @@ Implemented controls:
   opening restricted to HTTP(S)/mailto.
 - Production CSP permits bundled resources/data images only; no remote script/font/connection.
 - Atomic flushed saves, recovery snapshots, external-conflict handling, and recycle-bin deletion.
-- No eval, command execution, telemetry, updater, secrets, account, server, remote content, or
-  renderer filesystem module.
+- No eval, command execution, telemetry, secrets, account, document server, remote document content,
+  or renderer filesystem module. The installed Windows build makes at most one connectivity-gated
+  startup update request to the configured public GitHub Releases source; failures are silent and
+  documents are never transmitted.
 
 Inline styles are permitted because CodeMirror and supported Markdown formatting require them.
 Remote images are intentionally blocked. Local preview images are read through a size-limited,
 document-relative authorized bridge and returned as data URLs.
 
 Before public release, enable Authenticode signing, produce a complete transitive license/notice
-bundle including Electron/Chromium notices, retest on a clean offline Windows VM, and establish a
-dependency/security-update process. Security reports should contain version, reproduction, and
-impact but no private user documents.
+bundle including Electron/Chromium notices, retest on a clean offline Windows VM, and maintain the
+dependency/security-update process. Security reports should contain version, reproduction, and impact
+but no private user documents.

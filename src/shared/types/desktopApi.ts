@@ -17,6 +17,7 @@ import type {
   SaveAsRequest,
   SaveFileRequest,
   SaveFileResult,
+  UpdateState,
   RecoveryEntry,
   WorkspaceChangeEvent,
   WorkspaceMoveRequest,
@@ -46,6 +47,11 @@ export interface DesktopAPI {
   isWindowMaximized(): Promise<boolean>;
   /** Application version/runtime info for the About dialog. */
   getAppInfo(): Promise<AppInfo>;
+  /** Read and subscribe to the optional, silent background update state. */
+  getUpdateState(): Promise<UpdateState>;
+  onUpdateState(listener: (state: UpdateState) => void): () => void;
+  downloadUpdate(): Promise<boolean>;
+  installUpdate(): Promise<boolean>;
   /** Receive a Markdown file supplied by Windows at launch or from a second instance. */
   onLaunchFile(listener: (result: IpcResult<OpenedFilePayload>) => void): () => void;
   /** Subscribe to native menu actions. Returns an unsubscribe function. */

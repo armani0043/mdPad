@@ -1,7 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '../shared/constants';
 import type { DesktopAPI } from '../shared/types/desktopApi';
-import type { AppInfo, IpcResult, MenuAction, OpenedFilePayload } from '../shared/types';
+import type {
+  AppInfo,
+  IpcResult,
+  MenuAction,
+  OpenedFilePayload,
+  UpdateState,
+} from '../shared/types';
 
 type LaunchFileResult = IpcResult<OpenedFilePayload>;
 type LaunchFileListener = (result: LaunchFileResult) => void;
@@ -37,6 +43,16 @@ const api: DesktopAPI = {
   closeWindow: () => ipcRenderer.invoke(IPC.windowClose),
   isWindowMaximized: () => ipcRenderer.invoke(IPC.windowIsMaximized),
   getAppInfo: () => ipcRenderer.invoke(IPC.appInfo) as Promise<AppInfo>,
+  getUpdateState: () => ipcRenderer.invoke(IPC.updateGetState) as Promise<UpdateState>,
+  onUpdateState: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, state: UpdateState): void => {
+      listener(state);
+    };
+    ipcRenderer.on(IPC.updateStateChanged, handler);
+    return () => ipcRenderer.removeListener(IPC.updateStateChanged, handler);
+  },
+  downloadUpdate: () => ipcRenderer.invoke(IPC.updateDownload) as Promise<boolean>,
+  installUpdate: () => ipcRenderer.invoke(IPC.updateInstall) as Promise<boolean>,
   onLaunchFile: (listener) => {
     launchFileListeners.add(listener);
     const waiting = pendingLaunchFiles.splice(0);

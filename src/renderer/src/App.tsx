@@ -14,6 +14,7 @@ import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar, type SidebarView } from './components/Sidebar';
 import { StatusBar } from './components/StatusBar';
 import { TabStrip } from './components/TabStrip';
+import { UpdateNotification } from './components/UpdateNotification';
 import {
   getActiveDocument,
   hasUnsavedChanges,
@@ -331,6 +332,7 @@ export function App(): React.JSX.Element {
         onOpenGuide={() => setGuideOpen(true)}
         onOpenAbout={() => setAboutOpen(true)}
       />
+      <UpdateNotification />
       <div className="app-body">
         {navigationView && (
           <Sidebar
