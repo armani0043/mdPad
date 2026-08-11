@@ -39,3 +39,16 @@ jobs:
         run: npm run release:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish differential update blockmaps
+        shell: pwsh
+        run: |
+          $blockmaps = Get-ChildItem -LiteralPath release -Filter '*.blockmap'
+          if ($blockmaps.Count -eq 0) {
+            throw 'The Windows build did not produce an updater blockmap.'
+          }
+          foreach ($blockmap in $blockmaps) {
+            gh release upload $env:GITHUB_REF_NAME $blockmap.FullName --repo $env:GITHUB_REPOSITORY --clobber
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
