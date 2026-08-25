@@ -234,3 +234,13 @@ export interface ExportDocumentRequest {
   html: string;
   theme: 'light' | 'dark';
 }
+
+/** Rich clipboard formats shared between the sandboxed renderer and Electron. */
+export interface ClipboardContent {
+  /** Plain text for interoperability and Keep Text Only. */
+  text: string;
+  /** Sanitized rich HTML when the source provides formatting. */
+  html: string;
+  /** Exact Markdown supplied by mdPad, stored in a private clipboard format. */
+  markdown: string;
+}

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AlignCenter,
   AlignJustify,
@@ -35,6 +36,7 @@ import {
   Quote,
   Redo2,
   RefreshCw,
+  RotateCcw,
   Save,
   Search,
   Scissors,
@@ -48,11 +50,13 @@ import {
   Undo2,
   Waypoints,
   X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import logoUrl from '../../../../resources/icon.png';
-import type { FormatCommand } from '../editor/commands';
+import type { FormatCommand, PasteMode } from '../editor/commands';
 import { getActiveDocument, useDocumentStore } from '../stores/documentStore';
-import { useSettingsStore, type ViewMode } from '../stores/settingsStore';
+import { DEFAULT_ZOOM, ZOOM_STEP, useSettingsStore, type ViewMode } from '../stores/settingsStore';
 import { parentFolderForSelection, useWorkspaceStore } from '../stores/workspaceStore';
 import { SymbolPicker } from './SymbolPicker';
 import { LinkDialog } from './LinkDialog';
@@ -126,8 +130,143 @@ function openFind(replace: boolean): void {
   window.dispatchEvent(new CustomEvent('mdpad:editor-find', { detail: { replace } }));
 }
 
-function clipboard(command: 'paste' | 'cut' | 'copy'): void {
-  window.dispatchEvent(new CustomEvent('mdpad:clipboard', { detail: { command } }));
+function clipboard(command: 'paste' | 'cut' | 'copy', pasteMode?: PasteMode): void {
+  window.dispatchEvent(new CustomEvent('mdpad:clipboard', { detail: { command, pasteMode } }));
+}
+
+const PASTE_OPTIONS: Array<{ mode: PasteMode; label: string; description: string }> = [
+  {
+    mode: 'keep-source',
+    label: 'Keep Source Formatting',
+    description: 'Keep supported fonts, colours, emphasis, lists, links, tables, and structure.',
+  },
+  {
+    mode: 'merge-formatting',
+    label: 'Merge Formatting',
+    description: 'Keep semantic formatting while using mdPad document styling.',
+  },
+  {
+    mode: 'text-only',
+    label: 'Keep Text Only',
+    description: 'Discard formatting and paste plain text.',
+  },
+];
+
+function PasteSpecialControl({
+  disabled,
+  defaultMode,
+  onDefaultChange,
+}: {
+  disabled: boolean;
+  defaultMode: PasteMode;
+  onDefaultChange(mode: PasteMode): void;
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ left: 8, top: 8 });
+  const anchorRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent): void => {
+      const target = event.target as Node;
+      if (!anchorRef.current?.contains(target) && !menuRef.current?.contains(target))
+        setOpen(false);
+    };
+    const escape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('pointerdown', close);
+    window.addEventListener('keydown', escape);
+    return () => {
+      window.removeEventListener('pointerdown', close);
+      window.removeEventListener('keydown', escape);
+    };
+  }, [open]);
+
+  const toggle = (): void => {
+    if (!open) {
+      const rect = anchorRef.current?.getBoundingClientRect();
+      if (rect) {
+        setPosition({
+          left: Math.max(8, Math.min(rect.left, window.innerWidth - 330)),
+          top: rect.bottom + 4,
+        });
+      }
+    }
+    setOpen((current) => !current);
+  };
+
+  return (
+    <div className="paste-special-control" ref={anchorRef}>
+      <RibbonButton
+        title="Paste (Ctrl+V)"
+        large
+        label="Paste"
+        disabled={disabled}
+        onClick={() => clipboard('paste')}
+      >
+        <ClipboardPaste size={24} />
+      </RibbonButton>
+      <button
+        type="button"
+        className="paste-special-toggle"
+        aria-label="Paste Special"
+        title="Paste Special"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={disabled}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={toggle}
+      >
+        <ChevronDown size={14} />
+      </button>
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="paste-special-menu"
+            role="menu"
+            aria-label="Paste Special"
+            style={position}
+          >
+            <strong>Paste Special</strong>
+            {PASTE_OPTIONS.map((option) => (
+              <button
+                key={option.mode}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  clipboard('paste', option.mode);
+                  setOpen(false);
+                }}
+              >
+                <span>
+                  {option.label}
+                  {option.mode === defaultMode && <small>Default</small>}
+                </span>
+                <small>{option.description}</small>
+              </button>
+            ))}
+            <label>
+              <span>Default paste behavior</span>
+              <select
+                aria-label="Default paste behavior"
+                value={defaultMode}
+                onChange={(event) => onDefaultChange(event.target.value as PasteMode)}
+              >
+                {PASTE_OPTIONS.map((option) => (
+                  <option key={option.mode} value={option.mode}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
 }
 
 function showSidebar(view: SidebarView): void {
@@ -163,6 +302,8 @@ export function EditorToolbar({
   const sideBySide = useSettingsStore((state) => state.sideBySide);
   const wordWrap = useSettingsStore((state) => state.wordWrap);
   const theme = useSettingsStore((state) => state.theme);
+  const defaultPasteMode = useSettingsStore((state) => state.defaultPasteMode);
+  const zoom = useSettingsStore((state) => state.zoom);
   const activeDocument = getActiveDocument({ documents, activeDocumentId });
   const canFormat = Boolean(activeDocument) && (sideBySide || viewMode !== 'preview');
   const parent = workspace ? parentFolderForSelection(workspace, selectedRelativePath) : '';
@@ -442,6 +583,33 @@ export function EditorToolbar({
                 <BookOpen size={24} />
               </RibbonButton>
             </RibbonGroup>
+            <RibbonGroup label="Zoom">
+              <RibbonButton
+                title="Zoom out (Ctrl+-)"
+                large
+                label="Zoom out"
+                onClick={() => settings.setZoom(zoom - ZOOM_STEP)}
+              >
+                <ZoomOut size={24} />
+              </RibbonButton>
+              <RibbonButton
+                title="Reset zoom to 100% (Ctrl+0)"
+                large
+                label={`${zoom}%`}
+                active={zoom === DEFAULT_ZOOM}
+                onClick={settings.resetZoom}
+              >
+                <RotateCcw size={24} />
+              </RibbonButton>
+              <RibbonButton
+                title="Zoom in (Ctrl++)"
+                large
+                label="Zoom in"
+                onClick={() => settings.setZoom(zoom + ZOOM_STEP)}
+              >
+                <ZoomIn size={24} />
+              </RibbonButton>
+            </RibbonGroup>
             <RibbonGroup label="Window">
               <RibbonButton
                 title="Show all open documents side by side"
@@ -477,15 +645,11 @@ export function EditorToolbar({
         return (
           <>
             <RibbonGroup label="Clipboard">
-              <RibbonButton
-                title="Paste (Ctrl+V)"
-                large
-                label="Paste"
+              <PasteSpecialControl
                 disabled={!canFormat}
-                onClick={() => clipboard('paste')}
-              >
-                <ClipboardPaste size={24} />
-              </RibbonButton>
+                defaultMode={defaultPasteMode}
+                onDefaultChange={(mode) => settings.updateSettings({ defaultPasteMode: mode })}
+              />
               <RibbonButton
                 title="Cut (Ctrl+X)"
                 large

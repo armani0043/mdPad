@@ -1,9 +1,17 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { renderMarkdown, visualHtmlToMarkdown } from '../markdown/markdown';
-import type { EditorFormattingHandle, FormatCommand } from '../editor/commands';
+import type { EditorFormattingHandle, FormatCommand, PasteMode } from '../editor/commands';
+import {
+  clipboardContentFromTransfer,
+  htmlForPaste,
+  visualClipboardContent,
+  writeClipboardTransfer,
+} from '../editor/clipboard';
+import type { ClipboardContent } from '../../../shared/types';
 
 interface VisualEditorProps {
   markdown: string;
+  defaultPasteMode: PasteMode;
   onChange(markdown: string): void;
 }
 
@@ -37,6 +45,55 @@ function insertPlainText(text: string): void {
   const node = document.createTextNode(text);
   range.insertNode(node);
   range.setStartAfter(node);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function insertHtml(html: string): void {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+  const fragment = range.createContextualFragment(html);
+  const lastNode = fragment.lastChild;
+  range.insertNode(fragment);
+  if (lastNode) range.setStartAfter(lastNode);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function execHistoryCommand(editor: HTMLElement, command: string, value?: string): boolean {
+  if (typeof document.execCommand !== 'function') return false;
+  const before = editor.innerHTML;
+  const handled = document.execCommand(command, false, value);
+  return handled || editor.innerHTML !== before;
+}
+
+function insertClipboard(editor: HTMLElement, content: ClipboardContent, mode: PasteMode): void {
+  const html = htmlForPaste(content, mode);
+  if (html !== null) {
+    if (!execHistoryCommand(editor, 'insertHTML', html)) insertHtml(html);
+    return;
+  }
+  if (!execHistoryCommand(editor, 'insertText', content.text)) insertPlainText(content.text);
+}
+
+function selectedClipboardContent(editor: HTMLElement): ClipboardContent | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || !selection.toString()) return null;
+  const range = selection.getRangeAt(0);
+  if (!editor.contains(range.commonAncestorContainer)) return null;
+  return visualClipboardContent(range, selection.toString(), editor);
+}
+
+function deleteSelection(editor: HTMLElement): void {
+  if (execHistoryCommand(editor, 'delete')) return;
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
   range.collapse(true);
   selection.removeAllRanges();
   selection.addRange(range);
@@ -187,7 +244,7 @@ function visualCommand(editor: HTMLElement, command: FormatCommand, value?: stri
 }
 
 export const VisualEditor = forwardRef<EditorFormattingHandle, VisualEditorProps>(
-  function VisualEditor({ markdown, onChange }, ref) {
+  function VisualEditor({ markdown, defaultPasteMode, onChange }, ref) {
     const editorRef = useRef<HTMLDivElement | null>(null);
     const lastEmitted = useRef<string | null>(null);
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -231,25 +288,28 @@ export const VisualEditor = forwardRef<EditorFormattingHandle, VisualEditorProps
         rememberSelection();
         emitChange();
       },
-      clipboard: async (command) => {
+      clipboard: async (command, requestedPasteMode) => {
         const editor = editorRef.current;
         if (!editor) return;
         editor.focus();
         restoreSelection();
         if (command === 'paste') {
-          insertPlainText(await window.desktopAPI.readClipboardText());
+          const content = await window.desktopAPI.readClipboard();
+          editor.focus();
+          restoreSelection();
+          insertClipboard(editor, content, requestedPasteMode ?? defaultPasteMode);
+          rememberSelection();
           emitChange();
           return;
         }
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0 || !selection.toString()) return;
-        await window.desktopAPI.writeClipboardText(selection.toString());
+        const content = selectedClipboardContent(editor);
+        if (!content) return;
+        await window.desktopAPI.writeClipboard(content);
         if (command === 'cut') {
-          const range = selection.getRangeAt(0);
-          range.deleteContents();
-          range.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(range);
+          editor.focus();
+          restoreSelection();
+          deleteSelection(editor);
+          rememberSelection();
           emitChange();
         }
       },
@@ -292,13 +352,32 @@ export const VisualEditor = forwardRef<EditorFormattingHandle, VisualEditorProps
         onBlur={rememberSelection}
         onKeyUp={rememberSelection}
         onMouseUp={rememberSelection}
+        onCopy={(event) => {
+          const editor = editorRef.current;
+          if (!editor) return;
+          const content = selectedClipboardContent(editor);
+          if (!content || !writeClipboardTransfer(event.clipboardData, content)) return;
+          event.preventDefault();
+        }}
+        onCut={(event) => {
+          const editor = editorRef.current;
+          if (!editor) return;
+          const content = selectedClipboardContent(editor);
+          if (!content || !writeClipboardTransfer(event.clipboardData, content)) return;
+          event.preventDefault();
+          deleteSelection(editor);
+          rememberSelection();
+          emitChange();
+        }}
         onPaste={(event) => {
-          const text = event.clipboardData.getData('text/plain');
-          if (text) {
-            event.preventDefault();
-            insertPlainText(text);
-            emitChange();
-          }
+          const editor = editorRef.current;
+          if (!editor) return;
+          const content = clipboardContentFromTransfer(event.clipboardData);
+          if (!content.text && !content.html && !content.markdown) return;
+          event.preventDefault();
+          insertClipboard(editor, content, defaultPasteMode);
+          rememberSelection();
+          emitChange();
         }}
       />
     );

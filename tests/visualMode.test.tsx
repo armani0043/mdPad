@@ -38,7 +38,9 @@ describe('VisualEditor source preservation', () => {
     const markdown = '# Exact source\n\n- [x] Keep spacing\n';
 
     await act(async () => {
-      root.render(<VisualEditor markdown={markdown} onChange={onChange} />);
+      root.render(
+        <VisualEditor markdown={markdown} defaultPasteMode="keep-source" onChange={onChange} />,
+      );
     });
 
     expect(container.querySelector('.visual-editor')?.innerHTML).toContain('Exact source');
@@ -55,7 +57,9 @@ describe('VisualEditor source preservation', () => {
     const onChange = vi.fn();
 
     await act(async () => {
-      root.render(<VisualEditor markdown="Original" onChange={onChange} />);
+      root.render(
+        <VisualEditor markdown="Original" defaultPasteMode="keep-source" onChange={onChange} />,
+      );
     });
     const editor = container.querySelector<HTMLDivElement>('.visual-editor');
     expect(editor).not.toBeNull();
@@ -69,15 +73,19 @@ describe('VisualEditor source preservation', () => {
 
   it('supports the Home ribbon copy, cut, and paste commands', async () => {
     vi.useFakeTimers();
-    let clipboardText = 'Pasted';
-    const writeClipboardText = vi.fn(async (text: string) => {
-      clipboardText = text;
+    let clipboardContent = {
+      text: 'Pasted',
+      html: '<strong>Pasted</strong>',
+      markdown: '**Pasted**',
+    };
+    const writeClipboard = vi.fn(async (content: typeof clipboardContent) => {
+      clipboardContent = content;
     });
     Object.defineProperty(window, 'desktopAPI', {
       configurable: true,
       value: {
-        readClipboardText: vi.fn(async () => clipboardText),
-        writeClipboardText,
+        readClipboard: vi.fn(async () => clipboardContent),
+        writeClipboard,
       },
     });
     const container = document.createElement('div');
@@ -87,7 +95,14 @@ describe('VisualEditor source preservation', () => {
     const onChange = vi.fn();
 
     await act(async () => {
-      root.render(<VisualEditor ref={editorRef} markdown="Alpha Beta" onChange={onChange} />);
+      root.render(
+        <VisualEditor
+          ref={editorRef}
+          markdown="Alpha Beta"
+          defaultPasteMode="keep-source"
+          onChange={onChange}
+        />,
+      );
     });
     const editor = container.querySelector('.visual-editor');
     const textNode =
@@ -104,17 +119,20 @@ describe('VisualEditor source preservation', () => {
 
     selectAlpha();
     await act(async () => editorRef.current?.clipboard('copy'));
-    expect(writeClipboardText).toHaveBeenLastCalledWith('Alpha');
+    expect(writeClipboard).toHaveBeenLastCalledWith(
+      expect.objectContaining({ text: 'Alpha', markdown: 'Alpha' }),
+    );
 
     selectAlpha();
     await act(async () => editorRef.current?.clipboard('cut'));
     await act(async () => vi.advanceTimersByTime(130));
     expect(onChange).toHaveBeenLastCalledWith('Beta');
 
-    clipboardText = 'Pasted';
-    await act(async () => editorRef.current?.clipboard('paste'));
+    clipboardContent = { text: 'Pasted', html: '<strong>Pasted</strong>', markdown: '**Pasted**' };
+    await act(async () => editorRef.current?.clipboard('paste', 'keep-source'));
+    expect(editor?.innerHTML).toContain('<strong>Pasted</strong>');
     await act(async () => vi.advanceTimersByTime(130));
-    expect(onChange).toHaveBeenLastCalledWith('Pasted Beta');
+    expect(onChange).toHaveBeenLastCalledWith('**Pasted** Beta');
 
     await act(async () => root.unmount());
   });

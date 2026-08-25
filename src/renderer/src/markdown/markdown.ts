@@ -71,6 +71,16 @@ function turndownService(): TurndownService {
       (node.hasAttribute('align') || (node.getAttribute('style') ?? '').includes('text-align')),
     replacement: (_content, node) => `\n${(node as HTMLElement).outerHTML}\n`,
   });
+  service.addRule('styled-element', {
+    filter: (node) => node instanceof HTMLElement && node.hasAttribute('style'),
+    replacement: (_content, node) => {
+      const element = node as HTMLElement;
+      const block = /^(ADDRESS|ARTICLE|ASIDE|BLOCKQUOTE|DIV|H[1-6]|P|PRE|TABLE)$/.test(
+        element.tagName,
+      );
+      return block ? `\n${element.outerHTML}\n` : element.outerHTML;
+    },
+  });
   service.addRule('visual-task-list-item', {
     filter: (node) => {
       if (node.nodeName !== 'LI') return false;
@@ -93,12 +103,19 @@ function turndownService(): TurndownService {
 }
 
 export function visualHtmlToMarkdown(html: string): string {
-  const sanitized = DOMPurify.sanitize(html, {
+  const wrapper = document.createElement('div');
+  wrapper.id = 'mdpad-sanitizer-root';
+  wrapper.innerHTML = html;
+  const sanitizedWrapper = DOMPurify.sanitize(wrapper.outerHTML, {
     USE_PROFILES: { html: true },
     FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'button', 'textarea'],
     FORBID_ATTR: ['srcdoc'],
     ALLOW_DATA_ATTR: false,
   });
+  const template = document.createElement('template');
+  template.innerHTML = sanitizedWrapper;
+  const sanitizedRoot = template.content.querySelector('#mdpad-sanitizer-root');
+  const sanitized = sanitizedRoot?.innerHTML ?? sanitizedWrapper;
   return turndownService()
     .turndown(sanitized)
     .replace(/\n{3,}/g, '\n\n');

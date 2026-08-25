@@ -56,6 +56,8 @@ export const IPC = {
   exportHtml: 'export:html',
   exportPdf: 'export:pdf',
   shellOpenExternal: 'shell:open-external',
+  clipboardRead: 'clipboard:read',
+  clipboardWrite: 'clipboard:write',
   clipboardReadText: 'clipboard:read-text',
   clipboardWriteText: 'clipboard:write-text',
 } as const;

@@ -10,6 +10,7 @@ import type {
   AttachmentSaveRequest,
   AttachmentSaveResult,
   CloseDecision,
+  ClipboardContent,
   ExportDocumentRequest,
   IpcResult,
   MenuAction,
@@ -78,6 +79,9 @@ export interface DesktopAPI {
   exportHtml(request: ExportDocumentRequest): Promise<IpcResult<string | null>>;
   exportPdf(request: ExportDocumentRequest): Promise<IpcResult<string | null>>;
   openExternal(url: string): Promise<IpcResult<true>>;
+  readClipboard(): Promise<ClipboardContent>;
+  writeClipboard(content: ClipboardContent): Promise<void>;
+  /** Plain-text clipboard methods retained for compatibility with older renderer code. */
   readClipboardText(): Promise<string>;
   writeClipboardText(text: string): Promise<void>;
 }

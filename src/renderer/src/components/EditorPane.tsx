@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import logoUrl from '../../../../resources/icon.png';
-import type { EditorFormattingHandle, FormatCommand } from '../editor/commands';
+import type { EditorFormattingHandle, FormatCommand, PasteMode } from '../editor/commands';
 import { extractOutline } from '../markdown/markdown';
 import {
   getActiveDocument,
@@ -41,6 +41,7 @@ export function EditorPane(): React.JSX.Element {
   const viewMode = useSettingsStore((state) => state.viewMode);
   const sideBySide = useSettingsStore((state) => state.sideBySide);
   const attachmentFolder = useSettingsStore((state) => state.attachmentFolder);
+  const defaultPasteMode = useSettingsStore((state) => state.defaultPasteMode);
   const workspace = useWorkspaceStore((state) => state.workspace);
   const document = getActiveDocument({ documents, activeDocumentId });
   const conflictDocument =
@@ -72,9 +73,13 @@ export function EditorPane(): React.JSX.Element {
       editorRef.current?.focus();
     };
     const clipboard = (event: Event): void => {
-      const command = (event as CustomEvent<{ command?: 'paste' | 'cut' | 'copy' }>).detail
-        ?.command;
-      if (command) void editorRef.current?.clipboard(command);
+      const detail = (
+        event as CustomEvent<{
+          command?: 'paste' | 'cut' | 'copy';
+          pasteMode?: PasteMode;
+        }>
+      ).detail;
+      if (detail?.command) void editorRef.current?.clipboard(detail.command, detail.pasteMode);
     };
     const insertText = (event: Event): void => {
       const text = (event as CustomEvent<{ text?: string }>).detail?.text;
@@ -221,6 +226,7 @@ export function EditorPane(): React.JSX.Element {
                     dark={resolvedTheme === 'dark'}
                     wordWrap={wordWrap}
                     internalLinkSuggestions={internalLinkSuggestions}
+                    defaultPasteMode={defaultPasteMode}
                     cursorRequest={
                       cursorRequest?.documentId === openDocument.id ? cursorRequest : null
                     }
@@ -234,6 +240,7 @@ export function EditorPane(): React.JSX.Element {
                     ref={editorRef}
                     key={`side-visual-${openDocument.id}`}
                     markdown={openDocument.markdown}
+                    defaultPasteMode={defaultPasteMode}
                     onChange={(markdown) => setContent(openDocument.id, markdown)}
                   />
                 )
@@ -254,6 +261,7 @@ export function EditorPane(): React.JSX.Element {
           ref={editorRef}
           key={`visual-${document.id}`}
           markdown={document.markdown}
+          defaultPasteMode={defaultPasteMode}
           onChange={(markdown) => setContent(document.id, markdown)}
         />
       ) : viewMode === 'preview' ? (
@@ -272,6 +280,7 @@ export function EditorPane(): React.JSX.Element {
               dark={resolvedTheme === 'dark'}
               wordWrap={wordWrap}
               internalLinkSuggestions={internalLinkSuggestions}
+              defaultPasteMode={defaultPasteMode}
               cursorRequest={cursorRequest?.documentId === document.id ? cursorRequest : null}
               onChange={(markdown) => setContent(document.id, markdown)}
               onCursor={setCursor}
@@ -295,6 +304,7 @@ export function EditorPane(): React.JSX.Element {
           dark={resolvedTheme === 'dark'}
           wordWrap={wordWrap}
           internalLinkSuggestions={internalLinkSuggestions}
+          defaultPasteMode={defaultPasteMode}
           cursorRequest={cursorRequest?.documentId === document.id ? cursorRequest : null}
           onChange={(markdown) => setContent(document.id, markdown)}
           onCursor={setCursor}

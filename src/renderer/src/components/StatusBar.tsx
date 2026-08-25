@@ -1,3 +1,4 @@
+import { Minus, Plus } from 'lucide-react';
 import {
   charCountOf,
   getActiveDocument,
@@ -5,7 +6,13 @@ import {
   useDocumentStore,
   wordCountOf,
 } from '../stores/documentStore';
-import { useSettingsStore } from '../stores/settingsStore';
+import {
+  DEFAULT_ZOOM,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  ZOOM_STEP,
+  useSettingsStore,
+} from '../stores/settingsStore';
 import { useWorkspaceStore } from '../stores/workspaceStore';
 
 function formatEncoding(encoding: string): string {
@@ -21,6 +28,9 @@ export function StatusBar(): React.JSX.Element {
   const workspaceError = useWorkspaceStore((s) => s.lastError);
   const workspace = useWorkspaceStore((s) => s.workspace);
   const viewMode = useSettingsStore((s) => s.viewMode);
+  const zoom = useSettingsStore((s) => s.zoom);
+  const setZoom = useSettingsStore((s) => s.setZoom);
+  const resetZoom = useSettingsStore((s) => s.resetZoom);
 
   const doc = getActiveDocument({ documents, activeDocumentId });
   const modified = doc !== null && isModified(doc);
@@ -72,6 +82,45 @@ export function StatusBar(): React.JSX.Element {
               ? 'Modified'
               : 'Saved'}
       </span>
+      <div className="status-zoom" aria-label="Document zoom controls">
+        <button
+          type="button"
+          title="Zoom out"
+          aria-label="Zoom out"
+          disabled={zoom <= ZOOM_MIN}
+          onClick={() => setZoom(zoom - ZOOM_STEP)}
+        >
+          <Minus size={12} />
+        </button>
+        <input
+          type="range"
+          min={ZOOM_MIN}
+          max={ZOOM_MAX}
+          step={5}
+          value={zoom}
+          aria-label="Document zoom percentage"
+          aria-valuetext={`${zoom}%`}
+          onChange={(event) => setZoom(Number(event.target.value))}
+        />
+        <button
+          type="button"
+          title="Zoom in"
+          aria-label="Zoom in"
+          disabled={zoom >= ZOOM_MAX}
+          onClick={() => setZoom(zoom + ZOOM_STEP)}
+        >
+          <Plus size={12} />
+        </button>
+        <button
+          type="button"
+          className="status-zoom-value"
+          title={`Reset zoom to ${DEFAULT_ZOOM}%`}
+          aria-label={`Zoom ${zoom}%. Reset to ${DEFAULT_ZOOM}%`}
+          onClick={resetZoom}
+        >
+          {zoom}%
+        </button>
+      </div>
     </footer>
   );
 }

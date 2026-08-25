@@ -27,9 +27,12 @@ export type FormatCommand =
   | 'undo'
   | 'redo';
 
+export type PasteMode = 'keep-source' | 'merge-formatting' | 'text-only';
+export type ClipboardCommand = 'paste' | 'cut' | 'copy';
+
 export interface EditorFormattingHandle {
   format(command: FormatCommand, value?: string): void;
-  clipboard(command: 'paste' | 'cut' | 'copy'): Promise<void>;
+  clipboard(command: ClipboardCommand, pasteMode?: PasteMode): Promise<void>;
   insertText(text: string): void;
   openFind(): void;
   revealRange(from: number, to: number): void;

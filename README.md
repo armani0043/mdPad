@@ -9,6 +9,8 @@ Version 0.1 implements the complete offline acceptance scope from the master bui
 - Source, Visual, Preview, and Source + Preview modes.
 - Rich formatting for headings, fonts, sizes, bold, italic, underline, strikethrough, highlight,
   code, links, images, lists, tasks, quotes, tables, rules, and left/center/right/justified text.
+- Undo-safe rich cut/copy/paste with Keep Source Formatting, Merge Formatting, and Keep Text Only
+  Paste Special choices and a saved default behavior.
 - Folder workspaces with a nested tree, create, rename, move, duplicate, recycle-bin delete,
   reveal, local search, outline, tags, backlinks, and filesystem watching.
 - Multiple protected tabs, recent-tab reopening, session/workspace restore, quick open, command
@@ -17,7 +19,7 @@ Version 0.1 implements the complete offline acceptance scope from the master bui
   autosave, and crash recovery.
 - Local image paste/drop with collision-resistant relative attachments.
 - Light, dark, and system themes; editor font, size, line height, wrap, width, and attachment
-  preferences.
+  preferences; plus View-ribbon, keyboard, and status-bar document zoom controls.
 - Sanitized GFM rendering, safe local links, `[[Document]]` suggestions/navigation, local HTML/PDF
   export, and offline code highlighting.
 

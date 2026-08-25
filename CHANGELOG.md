@@ -1,12 +1,23 @@
 # Changelog
 
-## 0.1.3 - 2026-08-11
+## 0.1.3 - 2026-08-25
 
 ### Added
 
 - Added a silent, connectivity-gated startup update check for installed Windows builds.
 - Added optional download, progress, postpone, and confirmed install-and-restart controls.
 - Added GitHub Releases update metadata and a tag-triggered Windows publishing workflow.
+- Added Paste Special with Keep Source Formatting, Merge Formatting, and Keep Text Only choices,
+  including a locally saved default paste behavior.
+- Added Word-style document zoom controls in the View ribbon and status bar, plus Ctrl+Plus,
+  Ctrl+Minus, and Ctrl+0 shortcuts.
+
+### Fixed
+
+- Made toolbar and keyboard cut/paste edits participate reliably in Undo/Redo history in Source
+  and Visual modes, including content copied from external files and applications.
+- Preserved supported rich formatting through copy/paste between source, visual, single-file, and
+  multi-file views while sanitizing external HTML.
 
 ### Security and privacy
 

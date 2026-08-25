@@ -188,6 +188,23 @@ export function App(): React.JSX.Element {
     const onKeyDown = (event: KeyboardEvent): void => {
       const modifier = event.ctrlKey || event.metaKey;
       if (!modifier) return;
+      if (event.key === '0') {
+        event.preventDefault();
+        useSettingsStore.getState().resetZoom();
+        return;
+      }
+      if (event.key === '+' || event.key === '=' || event.code === 'NumpadAdd') {
+        event.preventDefault();
+        const settings = useSettingsStore.getState();
+        settings.setZoom(settings.zoom + 10);
+        return;
+      }
+      if (event.key === '-' || event.code === 'NumpadSubtract') {
+        event.preventDefault();
+        const settings = useSettingsStore.getState();
+        settings.setZoom(settings.zoom - 10);
+        return;
+      }
       if (event.key === 'Tab') {
         event.preventDefault();
         const store = useDocumentStore.getState();

@@ -5,9 +5,14 @@ import type {
   TextEncoding,
   ThemeSetting,
 } from '../../../shared/types';
+import type { PasteMode } from '../editor/commands';
 
 export type ViewMode = 'source' | 'visual' | 'preview' | 'split';
 export type AutosaveMode = 'off' | 'delay' | 'blur';
+export const ZOOM_MIN = 25;
+export const ZOOM_MAX = 300;
+export const ZOOM_STEP = 10;
+export const DEFAULT_ZOOM = 100;
 
 export interface PersistedSettings {
   theme: ThemeSetting;
@@ -23,6 +28,8 @@ export interface PersistedSettings {
   viewMode: ViewMode;
   sideBySide: boolean;
   reopenLastWorkspace: boolean;
+  defaultPasteMode: PasteMode;
+  zoom: number;
 }
 
 interface SettingsState extends PersistedSettings {
@@ -33,6 +40,8 @@ interface SettingsState extends PersistedSettings {
   updateSettings(settings: Partial<PersistedSettings>): void;
   setDefaultLineEnding(eol: 'LF' | 'CRLF'): void;
   setViewMode(mode: ViewMode): void;
+  setZoom(zoom: number): void;
+  resetZoom(): void;
 }
 
 const STORAGE_KEY = 'mdpad.settings.v1';
@@ -50,7 +59,18 @@ const DEFAULTS: PersistedSettings = {
   viewMode: 'visual',
   sideBySide: false,
   reopenLastWorkspace: true,
+  defaultPasteMode: 'keep-source',
+  zoom: DEFAULT_ZOOM,
 };
+
+function validPasteMode(value: unknown): PasteMode {
+  return value === 'merge-formatting' || value === 'text-only' ? value : 'keep-source';
+}
+
+export function clampZoom(value: number): number {
+  const numeric = Number.isFinite(value) ? value : DEFAULT_ZOOM;
+  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(numeric)));
+}
 
 function loadSettings(): PersistedSettings {
   try {
@@ -70,6 +90,8 @@ function loadSettings(): PersistedSettings {
         10_000,
         Math.max(300, Number(parsed.autosaveDelay ?? DEFAULTS.autosaveDelay)),
       ),
+      defaultPasteMode: validPasteMode(parsed.defaultPasteMode),
+      zoom: clampZoom(Number(parsed.zoom ?? DEFAULTS.zoom)),
     };
   } catch {
     return { ...DEFAULTS };
@@ -87,6 +109,7 @@ function applyVisualSettings(settings: PersistedSettings, resolvedTheme: 'light'
   root.style.setProperty('--font-size-editor', `${settings.fontSize}px`);
   root.style.setProperty('--editor-line-height', String(settings.lineHeight));
   root.style.setProperty('--content-width', `${settings.contentWidth}px`);
+  root.style.setProperty('--document-zoom', String(settings.zoom / 100));
 }
 
 const initial = loadSettings();
@@ -116,6 +139,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
   setDefaultLineEnding: (defaultLineEnding) => set({ defaultLineEnding }),
   setViewMode: (viewMode) => set({ viewMode, sideBySide: false }),
+  setZoom: (zoom) => {
+    const nextZoom = clampZoom(zoom);
+    const next = { ...get(), zoom: nextZoom };
+    applyVisualSettings(next, next.resolvedTheme);
+    set({ zoom: nextZoom });
+  },
+  resetZoom: () => get().setZoom(DEFAULT_ZOOM),
 }));
 
 useSettingsStore.subscribe((state) => {
@@ -133,6 +163,8 @@ useSettingsStore.subscribe((state) => {
     viewMode: state.viewMode,
     sideBySide: state.sideBySide,
     reopenLastWorkspace: state.reopenLastWorkspace,
+    defaultPasteMode: state.defaultPasteMode,
+    zoom: state.zoom,
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
 });

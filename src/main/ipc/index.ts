@@ -16,6 +16,7 @@ import type {
   AppInfo,
   AssetReadResult,
   CloseDecision,
+  ClipboardContent,
   FileErrorPayload,
   IpcResult,
   OpenedFilePayload,
@@ -66,6 +67,9 @@ const MARKDOWN_FILE_FILTERS = [
   { name: 'All Files', extensions: ['*'] },
 ];
 const MAX_ASSET_BYTES = 20 * 1024 * 1024;
+const MAX_CLIPBOARD_CHARACTERS = 20_000_000;
+const MARKDOWN_CLIPBOARD_FORMAT = 'text/markdown';
+const MARKDOWN_CLIPBOARD_MARKER = /<!--mdpad:markdown:([A-Za-z0-9+/=]+)-->/;
 const fileAccess = new FileAccessRegistry();
 
 function errorPayload(error: unknown, context: string): FileErrorPayload {
@@ -127,6 +131,61 @@ export function registerIpcHandlers(): void {
   const watchers = new Map<number, FSWatcher>();
   const watchTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
+  ipcMain.handle(IPC.clipboardRead, (event): ClipboardContent => {
+    windowForSender(event);
+    const rawHtml = clipboard.readHTML().slice(0, MAX_CLIPBOARD_CHARACTERS);
+    const marker = rawHtml.match(MARKDOWN_CLIPBOARD_MARKER);
+    let customMarkdown = '';
+    if (
+      clipboard
+        .availableFormats()
+        .some((format) => format.toLocaleLowerCase() === MARKDOWN_CLIPBOARD_FORMAT)
+    ) {
+      try {
+        customMarkdown = clipboard.readBuffer(MARKDOWN_CLIPBOARD_FORMAT).toString('utf8');
+      } catch {
+        customMarkdown = '';
+      }
+    }
+    let markedDownHtml = '';
+    if (marker?.[1]) {
+      try {
+        markedDownHtml = Buffer.from(marker[1], 'base64').toString('utf8');
+      } catch {
+        markedDownHtml = '';
+      }
+    }
+    return {
+      text: clipboard.readText().slice(0, MAX_CLIPBOARD_CHARACTERS),
+      html: rawHtml.replace(MARKDOWN_CLIPBOARD_MARKER, ''),
+      markdown: (markedDownHtml || customMarkdown).slice(0, MAX_CLIPBOARD_CHARACTERS),
+    };
+  });
+
+  ipcMain.handle(IPC.clipboardWrite, (event, value: unknown): void => {
+    windowForSender(event);
+    if (typeof value !== 'object' || value === null) return;
+    const candidate = value as Partial<ClipboardContent>;
+    if (
+      typeof candidate.text !== 'string' ||
+      typeof candidate.html !== 'string' ||
+      typeof candidate.markdown !== 'string' ||
+      candidate.text.length > MAX_CLIPBOARD_CHARACTERS ||
+      candidate.html.length > MAX_CLIPBOARD_CHARACTERS ||
+      candidate.markdown.length > MAX_CLIPBOARD_CHARACTERS
+    ) {
+      return;
+    }
+    const clipboardData: Electron.Data = { text: candidate.text };
+    if (candidate.html) {
+      const marker = candidate.markdown
+        ? `<!--mdpad:markdown:${Buffer.from(candidate.markdown, 'utf8').toString('base64')}-->`
+        : '';
+      clipboardData.html = `${marker}${candidate.html}`;
+    }
+    clipboard.write(clipboardData);
+  });
+
   ipcMain.handle(IPC.clipboardReadText, (event): string => {
     windowForSender(event);
     return clipboard.readText();
@@ -134,7 +193,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.clipboardWriteText, (event, value: unknown): void => {
     windowForSender(event);
-    if (typeof value !== 'string' || value.length > 20_000_000) return;
+    if (typeof value !== 'string' || value.length > MAX_CLIPBOARD_CHARACTERS) return;
     clipboard.writeText(value);
   });
 

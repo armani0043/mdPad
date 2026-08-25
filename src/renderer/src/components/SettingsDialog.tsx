@@ -135,6 +135,21 @@ export function SettingsDialog({ onClose }: SettingsDialogProps): React.JSX.Elem
                 }
               />
             </label>
+            <label>
+              Default paste behavior
+              <select
+                value={settings.defaultPasteMode}
+                onChange={(event) =>
+                  update({
+                    defaultPasteMode: event.target.value as typeof settings.defaultPasteMode,
+                  })
+                }
+              >
+                <option value="keep-source">Keep Source Formatting</option>
+                <option value="merge-formatting">Merge Formatting</option>
+                <option value="text-only">Keep Text Only</option>
+              </select>
+            </label>
             <label className="check-setting">
               <input
                 type="checkbox"

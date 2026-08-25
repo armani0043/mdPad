@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { Compartment, EditorSelection, EditorState } from '@codemirror/state';
+import { Compartment, EditorSelection, EditorState, Transaction } from '@codemirror/state';
 import {
   drawSelection,
   EditorView,
@@ -23,7 +23,13 @@ import { autocompletion, type CompletionContext } from '@codemirror/autocomplete
 import { tags } from '@lezer/highlight';
 import { oneDark } from '@codemirror/theme-one-dark';
 import type { CursorPosition, CursorRequest } from '../stores/documentStore';
-import type { EditorFormattingHandle, FormatCommand } from '../editor/commands';
+import type { EditorFormattingHandle, FormatCommand, PasteMode } from '../editor/commands';
+import {
+  clipboardContentFromTransfer,
+  markdownForPaste,
+  sourceClipboardContent,
+  writeClipboardTransfer,
+} from '../editor/clipboard';
 
 const lightHighlight = HighlightStyle.define([
   { tag: tags.heading, color: '#1a4f9c', fontWeight: '600' },
@@ -78,6 +84,7 @@ interface CodeMirrorEditorProps {
   wordWrap: boolean;
   cursorRequest: CursorRequest | null;
   internalLinkSuggestions: string[];
+  defaultPasteMode: PasteMode;
   onChange(text: string): void;
   onCursor(position: CursorPosition): void;
   onCursorRequestHandled(): void;
@@ -101,16 +108,20 @@ function replaceSelection(
   replacement: string,
   selectFrom?: number,
   selectTo?: number,
+  userEvent?: string,
 ): void {
   const selection = view.state.selection.main;
-  view.dispatch({
+  const transaction = {
     changes: { from: selection.from, to: selection.to, insert: replacement },
     selection: EditorSelection.single(
       selectFrom ?? selection.from + replacement.length,
       selectTo ?? selectFrom ?? selection.from + replacement.length,
     ),
     scrollIntoView: true,
-  });
+  };
+  if (userEvent)
+    view.dispatch({ ...transaction, annotations: Transaction.userEvent.of(userEvent) });
+  else view.dispatch(transaction);
 }
 
 function wrap(view: EditorView, before: string, after: string, placeholder: string): void {
@@ -247,6 +258,7 @@ export const CodeMirrorEditor = forwardRef<EditorFormattingHandle, CodeMirrorEdi
       wordWrap,
       cursorRequest,
       internalLinkSuggestions,
+      defaultPasteMode,
       onChange,
       onCursor,
       onCursorRequestHandled,
@@ -264,6 +276,7 @@ export const CodeMirrorEditor = forwardRef<EditorFormattingHandle, CodeMirrorEdi
     const initialDark = useRef(dark);
     const initialWrap = useRef(wordWrap);
     const suggestions = useRef(internalLinkSuggestions);
+    const pasteMode = useRef(defaultPasteMode);
 
     useEffect(() => {
       callbacks.current = { onChange, onCursor, onImage };
@@ -273,27 +286,39 @@ export const CodeMirrorEditor = forwardRef<EditorFormattingHandle, CodeMirrorEdi
       suggestions.current = internalLinkSuggestions;
     }, [internalLinkSuggestions]);
 
+    useEffect(() => {
+      pasteMode.current = defaultPasteMode;
+    }, [defaultPasteMode]);
+
     useImperativeHandle(ref, () => ({
       format: (command, value) => {
         const view = viewRef.current;
         if (view) applySourceFormat(view, command, value);
       },
-      clipboard: async (command) => {
+      clipboard: async (command, requestedPasteMode) => {
         const view = viewRef.current;
         if (!view) return;
         const selection = view.state.selection.main;
         if (command === 'paste') {
-          replaceSelection(view, await window.desktopAPI.readClipboardText());
+          const content = await window.desktopAPI.readClipboard();
+          replaceSelection(
+            view,
+            markdownForPaste(content, requestedPasteMode ?? pasteMode.current),
+            undefined,
+            undefined,
+            'input.paste',
+          );
           view.focus();
           return;
         }
         if (selection.empty) return;
         const text = view.state.sliceDoc(selection.from, selection.to);
-        await window.desktopAPI.writeClipboardText(text);
+        await window.desktopAPI.writeClipboard(sourceClipboardContent(text));
         if (command === 'cut') {
           view.dispatch({
             changes: { from: selection.from, to: selection.to, insert: '' },
             selection: EditorSelection.cursor(selection.from),
+            annotations: Transaction.userEvent.of('delete.cut'),
           });
         }
         view.focus();
@@ -378,15 +403,53 @@ export const CodeMirrorEditor = forwardRef<EditorFormattingHandle, CodeMirrorEdi
             wrapCompartment.current.of(initialWrap.current ? EditorView.lineWrapping : []),
             baseTheme,
             EditorView.domEventHandlers({
+              copy: (event) => {
+                const selection = view.state.selection.main;
+                if (selection.empty) return false;
+                const content = sourceClipboardContent(
+                  view.state.sliceDoc(selection.from, selection.to),
+                );
+                if (!writeClipboardTransfer(event.clipboardData, content)) return false;
+                event.preventDefault();
+                return true;
+              },
+              cut: (event) => {
+                const selection = view.state.selection.main;
+                if (selection.empty) return false;
+                const content = sourceClipboardContent(
+                  view.state.sliceDoc(selection.from, selection.to),
+                );
+                if (!writeClipboardTransfer(event.clipboardData, content)) return false;
+                event.preventDefault();
+                view.dispatch({
+                  changes: { from: selection.from, to: selection.to, insert: '' },
+                  selection: EditorSelection.cursor(selection.from),
+                  annotations: Transaction.userEvent.of('delete.cut'),
+                });
+                return true;
+              },
               paste: (event) => {
                 const file = [...(event.clipboardData?.files ?? [])].find((item) =>
                   item.type.startsWith('image/'),
                 );
-                if (!file) return false;
+                if (file) {
+                  event.preventDefault();
+                  void callbacks.current.onImage(file).then((markdown) => {
+                    if (markdown)
+                      replaceSelection(view, markdown, undefined, undefined, 'input.paste');
+                  });
+                  return true;
+                }
+                const content = clipboardContentFromTransfer(event.clipboardData);
+                if (!content.text && !content.html && !content.markdown) return false;
                 event.preventDefault();
-                void callbacks.current.onImage(file).then((markdown) => {
-                  if (markdown) replaceSelection(view, markdown);
-                });
+                replaceSelection(
+                  view,
+                  markdownForPaste(content, pasteMode.current),
+                  undefined,
+                  undefined,
+                  'input.paste',
+                );
                 return true;
               },
               drop: (event) => {

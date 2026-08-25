@@ -3,6 +3,7 @@ import { IPC } from '../shared/constants';
 import type { DesktopAPI } from '../shared/types/desktopApi';
 import type {
   AppInfo,
+  ClipboardContent,
   IpcResult,
   MenuAction,
   OpenedFilePayload,
@@ -124,6 +125,8 @@ const api: DesktopAPI = {
   exportHtml: (request) => ipcRenderer.invoke(IPC.exportHtml, request),
   exportPdf: (request) => ipcRenderer.invoke(IPC.exportPdf, request),
   openExternal: (url) => ipcRenderer.invoke(IPC.shellOpenExternal, url),
+  readClipboard: () => ipcRenderer.invoke(IPC.clipboardRead) as Promise<ClipboardContent>,
+  writeClipboard: (content) => ipcRenderer.invoke(IPC.clipboardWrite, content),
   readClipboardText: () => ipcRenderer.invoke(IPC.clipboardReadText),
   writeClipboardText: (text) => ipcRenderer.invoke(IPC.clipboardWriteText, text),
 };
